@@ -1,0 +1,48 @@
+# ─── OS ───
+.DS_Store
+Thumbs.db
+
+# ─── Env ───
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# ─── Node ───
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# ─── Next.js ───
+.next/
+out/
+build/
+dist/
+
+# ─── NestJS ───
+backend/dist/
+
+# ─── Prisma ───
+backend/prisma/migrations/dev.db*
+
+# ─── IDE ───
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# ─── Test ───
+coverage/
+.nyc_output/
+
+# ─── Docker ───
+docker-data/
+
+# ─── Logs ───
+logs/
+*.log
+
+# ─── Cursor/AI tooling ───
+.cursor/

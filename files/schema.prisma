@@ -1,0 +1,340 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────
+// AUTH / USER
+// ─────────────────────────────────────
+
+enum Role {
+  admin
+  editor
+}
+
+model User {
+  id           String     @id @default(uuid())
+  email        String     @unique
+  passwordHash String
+  role         Role       @default(editor)
+  isActive     Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  blogPosts    BlogPost[]
+  auditLogs    AuditLog[]
+  versions     ContentVersion[]
+
+  @@map("users")
+}
+
+// ─────────────────────────────────────
+// PRODUCT
+// ─────────────────────────────────────
+
+enum ContentStatus {
+  draft
+  published
+  scheduled
+}
+
+model ProductCategory {
+  id           String               @id @default(uuid())
+  slug         String               @unique
+  translations ProductCategoryTranslation[]
+  products     Product[]
+  createdAt    DateTime             @default(now())
+
+  @@map("product_categories")
+}
+
+model ProductCategoryTranslation {
+  id         String          @id @default(uuid())
+  categoryId String
+  locale     String          // "en" | "tr"
+  name       String
+  category   ProductCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([categoryId, locale])
+  @@map("product_category_translations")
+}
+
+model Product {
+  id           String               @id @default(uuid())
+  slug         String               @unique
+  categoryId   String?
+  status       ContentStatus        @default(draft)
+  publishedAt  DateTime?
+  order        Int                  @default(0)
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+
+  category     ProductCategory?     @relation(fields: [categoryId], references: [id])
+  translations ProductTranslation[]
+  testimonials Testimonial[]
+  resources    Resource[]
+
+  @@map("products")
+}
+
+model ProductTranslation {
+  id               String   @id @default(uuid())
+  productId        String
+  locale           String
+  title            String
+  shortDescription String   @db.Text
+  // Tab içerikleri JSON olarak saklanır
+  solution         Json?    // [{title, highlightedWord, description, image, imagePosition}]
+  howItWorks       Json?
+  keyBenefits      Json?    // [{title, description, icon}]
+  productFamily    Json?    // ilişkili ürün slug'ları
+  videos           Json?    // [{title, youtubeUrl}]
+  // SEO/GEO alanları
+  metaTitle        String?
+  metaDescription  String?  @db.VarChar(500)
+  canonicalUrl     String?
+  ogImage          String?
+  noIndex          Boolean  @default(false)
+  structuredData   Json?
+
+  product          Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, locale])
+  @@map("product_translations")
+}
+
+// ─────────────────────────────────────
+// BLOG
+// ─────────────────────────────────────
+
+enum PostType {
+  blog
+  news
+}
+
+model BlogPost {
+  id           String              @id @default(uuid())
+  slug         String              @unique
+  type         PostType            @default(blog)
+  authorId     String?
+  coverImage   String?
+  status       ContentStatus       @default(draft)
+  publishedAt  DateTime?
+  isHighlight  Boolean             @default(false) // sidebar'da gösterilsin mi
+  viewCount    Int                 @default(0)
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+
+  author       User?               @relation(fields: [authorId], references: [id])
+  translations BlogPostTranslation[]
+
+  @@map("blog_posts")
+}
+
+model BlogPostTranslation {
+  id              String   @id @default(uuid())
+  blogPostId      String
+  locale          String
+  title           String
+  excerpt         String   @db.Text
+  content         String   @db.Text // HTML veya JSON (rich text)
+  faqItems        Json?    // [{question, answer}] — FAQPage schema için
+  // SEO/GEO
+  metaTitle       String?
+  metaDescription String?  @db.VarChar(500)
+  canonicalUrl    String?
+  ogImage         String?
+  noIndex         Boolean  @default(false)
+
+  blogPost        BlogPost @relation(fields: [blogPostId], references: [id], onDelete: Cascade)
+
+  @@unique([blogPostId, locale])
+  @@map("blog_post_translations")
+}
+
+// ─────────────────────────────────────
+// RESOURCE (Datasheet, Case Study, Whitepaper)
+// ─────────────────────────────────────
+
+enum ResourceType {
+  datasheet
+  casestudy
+  whitepaper
+}
+
+model Resource {
+  id           String       @id @default(uuid())
+  type         ResourceType
+  productId    String?
+  coverImage   String?
+  fileUrl      String       // S3 URL
+  locale       String       @default("en")
+  title        String
+  description  String?      @db.Text
+  status       ContentStatus @default(published)
+  order        Int          @default(0)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  product      Product?     @relation(fields: [productId], references: [id])
+
+  @@map("resources")
+}
+
+// ─────────────────────────────────────
+// TESTIMONIAL
+// ─────────────────────────────────────
+
+model Testimonial {
+  id           String   @id @default(uuid())
+  productId    String
+  companyName  String
+  companyLogo  String?
+  quote        String   @db.Text
+  personName   String
+  personTitle  String
+  locale       String   @default("en")
+  order        Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  product      Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("testimonials")
+}
+
+// ─────────────────────────────────────
+// OFFICE
+// ─────────────────────────────────────
+
+model Office {
+  id             String   @id @default(uuid())
+  city           String
+  email          String
+  phone          String
+  fax            String?
+  address        String   @db.Text
+  image          String?
+  imagePosition  String   @default("right") // "left" | "right"
+  order          Int      @default(0)
+  locale         String   @default("en")
+  createdAt      DateTime @default(now())
+
+  @@map("offices")
+}
+
+// ─────────────────────────────────────
+// ANNOUNCEMENT BAR
+// ─────────────────────────────────────
+
+model AnnouncementBar {
+  id         String    @id @default(uuid())
+  locale     String    @default("en")
+  text       String
+  linkUrl    String?
+  linkLabel  String?
+  isActive   Boolean   @default(true)
+  startDate  DateTime?
+  endDate    DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@map("announcement_bars")
+}
+
+// ─────────────────────────────────────
+// FORM
+// ─────────────────────────────────────
+
+enum FormType {
+  contact
+  demo
+}
+
+model FormSubmission {
+  id        String   @id @default(uuid())
+  formType  FormType
+  data      Json     // form alanlarının değerleri
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@map("form_submissions")
+}
+
+// ─────────────────────────────────────
+// MEDIA
+// ─────────────────────────────────────
+
+model Media {
+  id           String   @id @default(uuid())
+  filename     String
+  originalName String
+  url          String   // S3 public URL
+  mimeType     String
+  size         Int      // bytes
+  altText      String?
+  uploadedBy   String?  // User id
+  createdAt    DateTime @default(now())
+
+  @@map("media")
+}
+
+// ─────────────────────────────────────
+// REDIRECT
+// ─────────────────────────────────────
+
+model Redirect {
+  id         String   @id @default(uuid())
+  fromPath   String   @unique
+  toPath     String
+  statusCode Int      @default(301) // 301 | 302
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("redirects")
+}
+
+// ─────────────────────────────────────
+// AUDIT LOG
+// ─────────────────────────────────────
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String?
+  action     String   // "create" | "update" | "delete" | "publish"
+  entityType String   // "Product" | "BlogPost" | "Resource" vb.
+  entityId   String
+  oldData    Json?
+  newData    Json?
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  user       User?    @relation(fields: [userId], references: [id])
+
+  @@map("audit_logs")
+}
+
+// ─────────────────────────────────────
+// CONTENT VERSION
+// ─────────────────────────────────────
+
+model ContentVersion {
+  id         String   @id @default(uuid())
+  entityType String
+  entityId   String
+  version    Int
+  data       Json     // o anki içeriğin snapshot'ı
+  createdBy  String?
+  createdAt  DateTime @default(now())
+
+  user       User?    @relation(fields: [createdBy], references: [id])
+
+  @@map("content_versions")
+}

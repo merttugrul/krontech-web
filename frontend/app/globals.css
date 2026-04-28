@@ -1,0 +1,228 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/**
+ * Krontech global stil katmanı.
+ *
+ * 1. :root — CSS değişkenleri (dark mode'a geçiş için soyutlama).
+ * 2. @layer base — html/body typografi ve selection rengi.
+ * 3. @layer components — site genelinde tekrarlı pattern'lar (.btn, .hl).
+ *    Component'ların içine inline yazmak yerine burada toplanıyor ki değişiklik
+ *    tek yerden gelsin.
+ */
+
+:root {
+  --foreground: 15 23 42; /* kron.dark */
+  --background: 255 255 255;
+  --muted: 100 116 139;
+  --accent: 37 99 235; /* kron.accent */
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    color: rgb(var(--foreground));
+    background: rgb(var(--background));
+    font-feature-settings: 'cv11', 'ss01', 'ss03';
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Selection — marketing sayfalarında beyaz zemin + mavi seçim okunaklı */
+  ::selection {
+    background-color: rgb(var(--accent) / 0.2);
+    color: rgb(var(--foreground));
+  }
+
+  /* Heading default — marketing sayfaları için biraz daha tight */
+  h1,
+  h2,
+  h3 {
+    @apply font-semibold tracking-tight text-kron-dark;
+  }
+
+  h1 {
+    @apply text-4xl sm:text-5xl lg:text-display-lg;
+  }
+
+  h2 {
+    @apply text-3xl sm:text-4xl;
+  }
+
+  h3 {
+    @apply text-2xl sm:text-3xl;
+  }
+
+  p {
+    @apply leading-relaxed text-slate-600;
+  }
+
+  a {
+    @apply transition-colors;
+  }
+
+  /* Keyboard erişilebilirlik — mouse focus outline'ı suppress etmiyoruz,
+     sadece `:focus-visible` için accent-mavi halka gösteriyoruz. */
+  :focus-visible {
+    outline: 2px solid rgb(var(--accent));
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+}
+
+@layer components {
+  /* ─────────────────────────────────────
+     Heading highlight — "Kron Telemetry Pipeline" örneğindeki gibi
+     belirli kelimeleri mavi altı-çubuk ile vurgulamak için.
+
+     Kullanım:
+       <h1>Kron <span class="hl">Telemetry Pipeline</span></h1>
+
+     Altı-çubuk yerine klasik underline istenirse `hl-underline` override eder.
+     ───────────────────────────────────── */
+  .hl {
+    @apply relative inline-block font-semibold text-kron-accent;
+  }
+  .hl::after {
+    content: '';
+    @apply absolute left-0 right-0 -bottom-1 h-[3px] rounded-full;
+    background-image: theme('backgroundImage.kron-accent-bar');
+  }
+  .hl-underline {
+    @apply underline decoration-kron-accent decoration-[3px] underline-offset-[6px] text-kron-accent font-semibold;
+  }
+  .hl::after {
+    /* hl-underline'dan sonra konumlansın ki override mümkün olsun */
+  }
+
+  /* ─────────────────────────────────────
+     Button primitive — Link/button üzerine giyer. Marketing sayfalarındaki
+     "Register Now", "Get a Demo" CTA'larının taban stilleri.
+     ───────────────────────────────────── */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-md px-5 py-2.5
+           text-sm font-medium transition-all
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kron-accent
+           focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply btn bg-kron-accent text-white hover:bg-kron-blue active:bg-kron-800;
+  }
+  .btn-secondary {
+    @apply btn border border-slate-300 bg-white text-kron-dark hover:border-kron-accent hover:text-kron-accent;
+  }
+  .btn-ghost {
+    @apply btn bg-transparent text-kron-dark hover:bg-slate-100;
+  }
+  .btn-inverse {
+    @apply btn bg-white text-kron-blue hover:bg-kron-50;
+  }
+
+  /* ─────────────────────────────────────
+     Container helper — Tailwind'in default `container`'ı max-width'i
+     breakpoint'e sabitliyor; marketing genellikle 2xl+ ekranlarda da sığar.
+     `container-tight` → blog okuma tipografisi için dar container.
+     ───────────────────────────────────── */
+  .container-tight {
+    @apply mx-auto w-full max-w-3xl px-4 sm:px-6 lg:px-8;
+  }
+
+  /* ─────────────────────────────────────
+     Section helper — büyük dikey spacing + mobile'da biraz daha sıkı.
+     ───────────────────────────────────── */
+  .section {
+    @apply py-16 sm:py-20 lg:py-24;
+  }
+  .section-tight {
+    @apply py-10 sm:py-14 lg:py-16;
+  }
+
+  /* ─────────────────────────────────────
+     TipTap editor — admin paneldeki rich text alanı.
+     ProseMirror node'larına minimum stil; blog detay sayfası ADIM 15'teki
+     `prose` sınıfıyla render ediyor, burası sadece editor UX.
+     ───────────────────────────────────── */
+  .tiptap-editor p.is-editor-empty:first-child::before {
+    @apply pointer-events-none float-left h-0 text-kron-gray/70 content-[attr(data-placeholder)];
+  }
+  .tiptap-editor h2 {
+    @apply mt-4 text-2xl font-bold text-kron-navy;
+  }
+  .tiptap-editor h3 {
+    @apply mt-3 text-xl font-semibold text-kron-navy;
+  }
+  .tiptap-editor ul,
+  .tiptap-editor ol {
+    @apply my-2 pl-6;
+  }
+  .tiptap-editor ul {
+    list-style: disc;
+  }
+  .tiptap-editor ol {
+    list-style: decimal;
+  }
+  .tiptap-editor blockquote {
+    @apply my-3 border-l-4 border-kron-accent bg-kron-light/40 py-2 pl-4 italic text-kron-dark;
+  }
+  .tiptap-editor pre {
+    @apply my-3 overflow-x-auto rounded-lg bg-slate-900 p-4 text-xs text-slate-100;
+  }
+  .tiptap-editor code {
+    @apply rounded bg-slate-100 px-1 py-0.5 text-[0.9em] text-kron-blue;
+  }
+  .tiptap-editor pre code {
+    @apply bg-transparent p-0 text-slate-100;
+  }
+  .tiptap-editor a {
+    @apply text-kron-accent underline underline-offset-2;
+  }
+  .tiptap-editor img {
+    @apply my-3 rounded-lg border border-kron-light;
+  }
+  .tiptap-editor .tiptap-table {
+    @apply my-3 w-full border-collapse border border-kron-light;
+  }
+  .tiptap-editor .tiptap-table td,
+  .tiptap-editor .tiptap-table th {
+    @apply border border-kron-light px-3 py-2 text-sm;
+  }
+  .tiptap-editor .tiptap-table th {
+    @apply bg-kron-light/60 font-semibold;
+  }
+  .tiptap-editor .tiptap-youtube {
+    @apply my-3 aspect-video w-full rounded-lg;
+  }
+  .tiptap-editor ul[data-type='taskList'] {
+    list-style: none;
+    padding-left: 0;
+  }
+  .tiptap-editor ul[data-type='taskList'] li {
+    @apply my-1 flex items-start gap-2;
+  }
+  .tiptap-editor ul[data-type='taskList'] li > label {
+    @apply select-none;
+  }
+  .tiptap-editor ul[data-type='taskList'] input[type='checkbox'] {
+    @apply mt-1 h-4 w-4 rounded border-kron-light;
+  }
+  .tiptap-editor .ProseMirror-focused {
+    @apply outline-none;
+  }
+}
+
+@layer utilities {
+  /* Text balance fallback — CSS `text-wrap: balance` desteklemeyen
+     tarayıcılarda heading satır kırılmasını yumuşatmak için. */
+  .text-balance {
+    text-wrap: balance;
+  }
+  .text-pretty {
+    text-wrap: pretty;
+  }
+}

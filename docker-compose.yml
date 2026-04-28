@@ -1,0 +1,143 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: krontech_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: krontech
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: krontech
+    ports:
+      # Host portu 5433 — sistemdeki native PostgreSQL ile çakışmasın diye.
+      # Container içi (docker network) port hâlâ 5432, backend bu port üzerinden bağlanır.
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U krontech -d krontech"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - krontech_net
+
+  redis:
+    image: redis:7-alpine
+    container_name: krontech_redis
+    restart: unless-stopped
+    ports:
+      # Host portu 6380 — sistemdeki native Redis ile çakışmasın diye.
+      # Container içi (docker network) port hâlâ 6379.
+      - "6380:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - krontech_net
+
+  minio:
+    image: minio/minio:latest
+    container_name: krontech_minio
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - krontech_net
+
+  minio-init:
+    image: minio/mc:latest
+    container_name: krontech_minio_init
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://minio:9000 minioadmin minioadmin;
+      mc mb --ignore-existing local/krontech-media;
+      mc anonymous set download local/krontech-media;
+      exit 0;
+      "
+    networks:
+      - krontech_net
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: krontech_backend
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://krontech:password@postgres:5432/krontech
+      REDIS_URL: redis://redis:6379
+      S3_ENDPOINT: http://minio:9000
+      NODE_ENV: development
+    ports:
+      - "4000:4000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    networks:
+      - krontech_net
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:4000
+        NEXT_PUBLIC_SITE_URL: http://localhost:3000
+        NEXT_PUBLIC_RECAPTCHA_SITE_KEY: ${NEXT_PUBLIC_RECAPTCHA_SITE_KEY:-}
+    container_name: krontech_frontend
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      # Kök .env içinde backend için PORT=4000 var; frontend container'ı 3000'i
+      # dinlemeli. env_file'dan gelen PORT'u burada override ediyoruz.
+      PORT: 3000
+      HOSTNAME: 0.0.0.0
+      API_INTERNAL_URL: http://backend:4000
+      NEXT_PUBLIC_API_URL: http://localhost:4000
+      NEXT_PUBLIC_SITE_URL: http://localhost:3000
+      REVALIDATION_SECRET: ${REVALIDATION_SECRET}
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - krontech_net
+
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:
+
+networks:
+  krontech_net:
+    driver: bridge

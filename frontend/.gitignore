@@ -1,0 +1,22 @@
+node_modules
+.next
+out
+build
+
+# local env
+.env
+.env.local
+.env.development.local
+.env.production.local
+
+# test output
+coverage
+
+# OS
+.DS_Store
+*.pem
+*.log
+
+# IDE
+.vscode
+.idea
