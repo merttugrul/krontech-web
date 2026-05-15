@@ -194,6 +194,7 @@ export function ResourceForm({ mode, initial }: ResourceFormProps) {
           value={fileUrl}
           onChange={(v) => setFileUrl(v ?? '')}
           hint="PDF veya medya — yükle veya URL yapıştır."
+          libraryFilter="all"
         />
         {errors.fileUrl && (
           <p className="mt-1 text-xs font-medium text-red-600">{errors.fileUrl}</p>

@@ -19,6 +19,7 @@ import { FormCard, FormGrid } from '@/components/admin/FormCard';
 import { AdminCheckbox, AdminInput, AdminSelect, AdminTextarea } from '@/components/admin/FormField';
 import { LocaleTabs } from '@/components/admin/LocaleTabs';
 import { JsonBlockEditor } from '@/components/admin/JsonBlockEditor';
+import { SolutionBlockEditor } from '@/components/admin/SolutionBlockEditor';
 import { MediaPicker } from '@/components/admin/MediaPicker';
 import { StatusBadge } from '@/components/admin/StatusBadge';
 
@@ -204,6 +205,7 @@ export function ProductForm({ mode, initial }: ProductFormProps) {
               value={state.translations[activeLocale]}
               onChange={(patch) => setTr(activeLocale, patch)}
               errors={trErrors[activeLocale] ?? {}}
+              solutionEditorKey={`${initial?.id ?? 'create'}-${activeLocale}`}
             />
           </FormCard>
         </div>
@@ -283,9 +285,10 @@ interface TranslationFieldsProps {
   value: AdminProductTranslation;
   onChange: (patch: Partial<AdminProductTranslation>) => void;
   errors: Record<string, string>;
+  solutionEditorKey: string;
 }
 
-function TranslationFields({ locale, value, onChange, errors }: TranslationFieldsProps) {
+function TranslationFields({ locale, value, onChange, errors, solutionEditorKey }: TranslationFieldsProps) {
   const required = locale === 'en';
   return (
     <div className="space-y-4">
@@ -309,11 +312,10 @@ function TranslationFields({ locale, value, onChange, errors }: TranslationField
         />
       </FormGrid>
 
-      <JsonBlockEditor
-        label="Solution bloğu"
+      <SolutionBlockEditor
+        key={solutionEditorKey}
         value={value.solution}
         onChange={(v) => onChange({ solution: v as unknown })}
-        hint={'Şema: { heading?, description, bullets? }'}
       />
       <JsonBlockEditor
         label="How it works"

@@ -4,6 +4,9 @@ import { getDictionary } from '@/lib/i18n';
 
 const LOCALE = 'en' as const;
 
+/** Liste silme/yayın sonrası anında güncellensin (ISR süresiz önbellek yok). */
+export const revalidate = 0;
+
 interface SearchParams {
   page?: string;
   highlight?: string;

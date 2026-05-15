@@ -603,9 +603,15 @@ export class BlogService {
 
     // Frontend ISR revalidation (fire-and-forget) + sitemap cache invalidate
     const unique = Array.from(new Set(slugs.filter(Boolean)));
-    const paths = unique.flatMap((s) => [`/en/blog/${s}`, `/tr/blog/${s}`]);
+    const paths = [
+      '/blog',
+      '/tr/blog',
+      ...unique.flatMap((s) => [`/blog/${s}`, `/tr/blog/${s}`]),
+    ];
     void this.cache.invalidateNamespace('sitemap').catch(() => undefined);
-    void this.revalidation.revalidate({ tags: ['blog', 'sitemap'], paths }).catch(() => undefined);
+    void this.revalidation
+      .revalidate({ tags: ['blog', 'blog-list', 'sitemap'], paths })
+      .catch(() => undefined);
   }
 
   private handlePrismaError(err: unknown): never {

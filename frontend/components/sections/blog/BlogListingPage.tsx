@@ -135,10 +135,11 @@ async function fetchList(
     params.set('page', String(page));
     params.set('pageSize', String(PAGE_SIZE));
     if (highlightOnly) params.set('isHighlight', 'true');
-    return await sfetch<Paginated<BlogListItem>>(
-      `/blog?${params.toString()}`,
-      { tags: ['blog'], revalidate: 300 },
-    );
+    const fetchOpts =
+      type === 'blog'
+        ? { tags: ['blog', 'blog-list'] as string[], revalidate: 0 }
+        : { tags: ['blog'] as string[], revalidate: 300 };
+    return await sfetch<Paginated<BlogListItem>>(`/blog?${params.toString()}`, fetchOpts);
   } catch {
     return { items: [], total: 0, page, pageSize: PAGE_SIZE };
   }

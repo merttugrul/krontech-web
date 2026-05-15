@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import Image from 'next/image';
 import type { BlogListItem, Locale } from '@/lib/types';
 import { formatDate, localePrefix, truncate } from '@/lib/utils';
 import { Icon } from './Icon';
@@ -24,12 +23,10 @@ export function BlogCard({ post, locale, readMoreLabel }: BlogCardProps) {
     >
       <div className="relative aspect-[16/9] w-full bg-gradient-to-br from-slate-900 via-kron-blue to-kron-accent">
         {post.coverImage ? (
-          <Image
+          <img
             src={post.coverImage}
             alt=""
-            fill
-            sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
-            className="object-cover"
+            className="object-cover w-full h-full"
           />
         ) : null}
       </div>
