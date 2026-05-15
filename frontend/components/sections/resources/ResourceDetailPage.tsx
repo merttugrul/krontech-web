@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { sfetch } from '@/lib/api';
 import type { Locale, Paginated, Resource } from '@/lib/types';
@@ -131,13 +130,10 @@ export async function ResourceDetailPage({ id, locale }: ResourceDetailPageProps
         <section className="bg-white">
           <div className="container -mt-10 sm:-mt-14">
             <div className="relative aspect-[16/7] w-full overflow-hidden rounded-2xl shadow-hero">
-              <Image
+              <img
                 src={resource.coverImage}
                 alt={resource.title}
-                fill
-                sizes="(min-width: 1280px) 1200px, 100vw"
-                priority
-                className="object-cover"
+                className="object-cover w-full h-full"
               />
             </div>
           </div>

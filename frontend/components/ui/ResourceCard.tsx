@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import Image from 'next/image';
 import type { Locale, Resource } from '@/lib/types';
 import type { Dictionary } from '@/lib/i18n';
 import { localePrefix, truncate } from '@/lib/utils';
@@ -30,12 +29,10 @@ export function ResourceCard({ resource, locale, dict }: ResourceCardProps) {
         className="relative block aspect-[16/9] w-full overflow-hidden bg-gradient-to-br from-kron-blue via-kron-accent to-kron-light"
       >
         {resource.coverImage ? (
-          <Image
+          <img
             src={resource.coverImage}
             alt={resource.title}
-            fill
-            sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
-            className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+            className="object-cover w-full h-full"
           />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center text-white/80">
